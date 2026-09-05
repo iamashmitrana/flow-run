@@ -6,38 +6,54 @@
 <meta name="robots" content="noindex,nofollow">
 <title>Flow sync</title>
 <style>
-  :root { color-scheme: light dark; }
-  body {
-    margin: 0; min-height: 100vh;
-    display: flex; align-items: center; justify-content: center;
-    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
-    background: #faf9f7; color: #1a1a1a;
-  }
+  :root { color-scheme: light dark; --bg:#faf9f7; --fg:#1a1a1a; --dim:#6b6b6b; --line:#e3e2df; }
   @media (prefers-color-scheme: dark) {
-    body { background: #191919; color: #e9e9e7; }
+    :root { --bg:#191919; --fg:#e9e9e7; --dim:#9b9a97; --line:#2f2f2f; }
   }
-  main { text-align: center; padding: 2rem; }
-  h1 { font-size: 1.25rem; font-weight: 600; margin: 0 0 .5rem; }
-  p { margin: 0; opacity: .65; font-size: .9rem; }
-  code {
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    font-size: .85em; opacity: .8;
+  * { box-sizing: border-box; }
+  body {
+    margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
+    background:var(--bg); color:var(--fg); padding:1.5rem;
+    font:16px/1.6 system-ui,-apple-system,"Segoe UI",sans-serif;
   }
+  main { max-width:30rem; text-align:center; }
+  h1 { font-size:1.3rem; font-weight:600; margin:0 0 .4rem; }
+  .sub { color:var(--dim); font-size:.95rem; margin:0 0 1.5rem; }
+  .note {
+    border:1px solid var(--line); border-radius:10px; padding:1rem 1.15rem;
+    text-align:left; font-size:.9rem; color:var(--dim); margin-bottom:1.25rem;
+  }
+  .note strong { color:var(--fg); font-weight:600; }
+  a.again {
+    display:inline-block; padding:.6rem 1.15rem; border:1px solid var(--line);
+    border-radius:8px; text-decoration:none; color:var(--fg); font-size:.9rem;
+  }
+  a.again:hover { border-color:var(--dim); }
+  code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.88em; }
 </style>
 </head>
 <body>
 <main>
   <h1>Sync triggered</h1>
-  <p>You can close this tab.</p>
-  <p style="margin-top:1rem"><code>flow://run</code></p>
+  <p class="sub">Close this tab whenever. The sync runs on your machine.</p>
+
+  <div class="note">
+    <strong>First time?</strong> Chrome asks permission to open Flow Sync.
+    Tick <strong>Always allow</strong>, then confirm — otherwise nothing runs.
+    If you dismissed it, hit the button below.
+  </div>
+
+  <a class="again" href="flow://run">Run it again</a>
 </main>
 <script>
-  // Hand off to the local flow:// protocol handler. This page does nothing on
-  // its own - without the handler registered on the machine, the link is inert.
+  // Hand off to the local flow:// handler. This page does nothing on its own -
+  // without that handler registered on the machine, every link here is inert.
+  //
+  // Do NOT call window.close() here. Notion opens links via window.open(), which
+  // makes this tab script-closeable, so a close() actually succeeds - and it
+  // tears down Chrome's protocol permission dialog before the handoff completes,
+  // silently preventing the sync from ever running.
   location.href = "flow://run";
-  // Best effort. Browsers block close() on tabs the user navigated to, so this
-  // usually does nothing and the tab has to be closed by hand.
-  setTimeout(function () { try { window.close(); } catch (e) {} }, 800);
 </script>
 </body>
 </html>
