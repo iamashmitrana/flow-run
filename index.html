@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>Flow sync</title>
+<style>
+  :root { color-scheme: light dark; }
+  body {
+    margin: 0; min-height: 100vh;
+    display: flex; align-items: center; justify-content: center;
+    font: 16px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif;
+    background: #faf9f7; color: #1a1a1a;
+  }
+  @media (prefers-color-scheme: dark) {
+    body { background: #191919; color: #e9e9e7; }
+  }
+  main { text-align: center; padding: 2rem; }
+  h1 { font-size: 1.25rem; font-weight: 600; margin: 0 0 .5rem; }
+  p { margin: 0; opacity: .65; font-size: .9rem; }
+  code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: .85em; opacity: .8;
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>Sync triggered</h1>
+  <p>You can close this tab.</p>
+  <p style="margin-top:1rem"><code>flow://run</code></p>
+</main>
+<script>
+  // Hand off to the local flow:// protocol handler. This page does nothing on
+  // its own - without the handler registered on the machine, the link is inert.
+  location.href = "flow://run";
+  // Best effort. Browsers block close() on tabs the user navigated to, so this
+  // usually does nothing and the tab has to be closed by hand.
+  setTimeout(function () { try { window.close(); } catch (e) {} }, 800);
+</script>
+</body>
+</html>
