@@ -10,7 +10,7 @@
   @media (prefers-color-scheme: dark) {
     :root { --bg:#191919; --fg:#e9e9e7; --dim:#9b9a97; --line:#2f2f2f; }
   }
-  * { box-sizing: border-box; }
+  * { box-sizing:border-box; }
   body {
     margin:0; min-height:100vh; display:flex; align-items:center; justify-content:center;
     background:var(--bg); color:var(--fg); padding:1.5rem;
@@ -24,36 +24,104 @@
     text-align:left; font-size:.9rem; color:var(--dim); margin-bottom:1.25rem;
   }
   .note strong { color:var(--fg); font-weight:600; }
-  a.again {
+  .row { display:flex; gap:.5rem; justify-content:center; flex-wrap:wrap; }
+  a.btn, button.btn {
     display:inline-block; padding:.6rem 1.15rem; border:1px solid var(--line);
     border-radius:8px; text-decoration:none; color:var(--fg); font-size:.9rem;
+    background:transparent; cursor:pointer; font-family:inherit;
   }
-  a.again:hover { border-color:var(--dim); }
-  code { font-family:ui-monospace,SFMono-Regular,Menlo,monospace; font-size:.88em; }
+  a.btn:hover, button.btn:hover { border-color:var(--dim); }
+  #count { font-variant-numeric:tabular-nums; }
 </style>
 </head>
 <body>
 <main>
-  <h1>Sync triggered</h1>
-  <p class="sub">Close this tab whenever. The sync runs on your machine.</p>
+  <h1 id="head">Sync triggered</h1>
+  <p class="sub" id="sub">Running on your machine.</p>
 
-  <div class="note">
-    <strong>First time?</strong> Chrome asks permission to open Flow Sync.
-    Tick <strong>Always allow</strong>, then confirm — otherwise nothing runs.
-    If you dismissed it, hit the button below.
+  <div class="note" id="firstrun" hidden>
+    <strong>First time in this browser.</strong> Chrome will ask permission to
+    open Flow Sync — tick <strong>Always allow</strong>, then confirm.
+    This tab stays open so the dialog is usable. From your next click it closes
+    itself automatically.
   </div>
 
-  <a class="again" href="flow://run">Run it again</a>
+  <div class="row">
+    <a class="btn" href="flow://run">Run it again</a>
+    <button class="btn" id="stay" hidden>Keep this tab open</button>
+  </div>
 </main>
+
 <script>
-  // Hand off to the local flow:// handler. This page does nothing on its own -
+(function () {
+  // ---------------------------------------------------------------------
+  // Hand off to the local flow:// handler. This page does nothing on its own:
   // without that handler registered on the machine, every link here is inert.
   //
-  // Do NOT call window.close() here. Notion opens links via window.open(), which
-  // makes this tab script-closeable, so a close() actually succeeds - and it
-  // tears down Chrome's protocol permission dialog before the handoff completes,
-  // silently preventing the sync from ever running.
-  location.href = "flow://run";
+  // HISTORY - do not "simplify" this away. An unconditional window.close() was
+  // here once and it broke the button completely. Notion opens links via
+  // window.open(), so this tab IS script-closeable, and closing it tears down
+  // Chrome's protocol permission dialog before the handoff lands. The sync then
+  // silently never runs. The localStorage gate below exists so a browser that
+  // has not yet been through that dialog never auto-closes.
+  // ---------------------------------------------------------------------
+  var KEY = 'flow-seen';
+  var DELAY = 2000;
+
+  function seen() {
+    try { return localStorage.getItem(KEY) === '1'; } catch (e) { return false; }
+  }
+  function markSeen() {
+    try { localStorage.setItem(KEY, '1'); } catch (e) {}
+  }
+
+  var wasSeen = seen();
+  markSeen();
+
+  // Fire the handoff.
+  location.href = 'flow://run';
+
+  if (!wasSeen) {
+    // First visit from this browser: the permission dialog is probably about to
+    // appear. Leave the tab alone so it can actually be used.
+    document.getElementById('firstrun').hidden = false;
+    document.getElementById('sub').textContent =
+      'If Chrome asks, allow it — otherwise nothing runs.';
+    return;
+  }
+
+  // Been here before, so the dialog is already dealt with. Close up.
+  var cancelled = false;
+  var left = Math.ceil(DELAY / 1000);
+  var sub = document.getElementById('sub');
+  var stay = document.getElementById('stay');
+
+  stay.hidden = false;
+  stay.addEventListener('click', function () {
+    cancelled = true;
+    sub.textContent = 'Staying open. Close it whenever.';
+    stay.hidden = true;
+  });
+
+  function tick() {
+    if (cancelled) return;
+    if (left <= 0) {
+      try { window.close(); } catch (e) {}
+      // If the browser refused to close it (this tab was opened by typing the
+      // URL rather than from a link), say so instead of pretending.
+      setTimeout(function () {
+        if (cancelled) return;
+        sub.textContent = 'Done. You can close this tab.';
+        stay.hidden = true;
+      }, 400);
+      return;
+    }
+    sub.textContent = 'Done. Closing in ' + left + '…';
+    left -= 1;
+    setTimeout(tick, 1000);
+  }
+  tick();
+})();
 </script>
 </body>
 </html>
